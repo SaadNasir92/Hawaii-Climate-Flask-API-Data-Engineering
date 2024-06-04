@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.automap import automap_base
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-import numpy as np
 
 engine = create_engine("sqlite:///data_files/hawaii.sqlite")
 Base = automap_base()
@@ -49,8 +48,18 @@ def tobs():
     return jsonify(temps_one_year_lookback)
 
 
+@app.route('/api/v1.0/<start>')
+def temp_details_from(start):
+    try:
+        start_cleaned = datetime.strptime(start,'%Y-%m-%d')
+    except ValueError:
+        return f'Date must be formatted as "YYYY-M-D".'
+    
+    session = Session(engine)
+    result = session.query(Measurement.date, func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).filter(Measurement.date > start_cleaned).group_by(Measurement.date).all()
+    result_list = [{row[0]: {'Min': row[1], 'Max': row[2], 'Avg': row[3]}} for row in result]
+    return jsonify(result_list)
 
-# @app.route('/api/v1.0/<start>')
 # @app.route('/api/v1.0/<start>/<end>')
 
 
