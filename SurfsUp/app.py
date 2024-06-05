@@ -77,7 +77,7 @@ def tobs():
     session.close()
     
     # Saving results to list to print to temperature observed endpoint.
-    temps_one_year_lookback = [result.tobs for result in tobs_result]
+    temps_one_year_lookback = [(result.date, result.tobs) for result in tobs_result]
     return jsonify(temps_one_year_lookback)
 
 
