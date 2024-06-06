@@ -87,21 +87,25 @@ def temp_details_from(start):
     try:
         start_cleaned = datetime.strptime(start,'%Y-%m-%d')
     except ValueError:
-        return f'Date must be formatted as "YYYY-M-D".'
+        return f'Date must be formatted as "YYYY-M-D" or "YYYY-MM-DD".'
     
-    # Removing a day to ensure user inputted start date gets caputed
+    # Removing a day to ensure user inputted start date gets captured.
     date_to_start_at = start_cleaned - relativedelta(days=1)
     
     session = Session(engine)
     
     # Grabbing min, max, avg for dates from user input start date to end of observed data.
-    
     result = session.query(Measurement.date, func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).filter(Measurement.date > date_to_start_at).group_by(Measurement.date).all()
     result_list = [{row[0]: {'Min': row[1], 'Max': row[2], 'Avg': row[3]}} for row in result]
     session.close()
     
-    # Printing result to end point
-    return jsonify(result_list)
+    # Error for no results.
+    if len(result_list) <= 0:
+        return f'No results found for {datetime.strftime(start_cleaned, "%Y-%m-%d")} try a different start.'
+    else:
+        # Printing result to end point
+        return jsonify(result_list)
+
 
 @app.route('/api/v1.0/<start>/<end>')
 def temp_details_filter(start, end):
@@ -110,7 +114,7 @@ def temp_details_filter(start, end):
         start_cleaned = datetime.strptime(start,'%Y-%m-%d')
         end_cleaned = datetime.strptime(end,'%Y-%m-%d')
     except ValueError:
-        return f'Date must be formatted as "YYYY-M-D".'
+        return f'Date must be formatted as "YYYY-M-D" or "YYYY-MM-DD".'
     
     # Removing a day to ensure user inputted start date gets caputed
     date_to_start_at = start_cleaned - relativedelta(days=1)
@@ -122,8 +126,11 @@ def temp_details_filter(start, end):
     result_list = [{row[0]: {'Min': row[1], 'Max': row[2], 'Avg': row[3]}} for row in result]
     session.close()
     
-    # Printing result to end point
-    return jsonify(result_list)
+    if len(result_list) <= 0:
+        return f'No results found between {datetime.strftime(start_cleaned, "%Y-%m-%d")} and {datetime.strftime(end_cleaned, "%Y-%m-%d")}, try a different start/end.'
+    else:
+        # Printing result to end point
+        return jsonify(result_list)
     
 
 # App object from flask only runs when the script is run directly from this file.
